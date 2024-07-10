@@ -6,6 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 
 routes = [{ pattern = "drop-api.yankeguo.com", custom_domain = true }]
 
+[env.dev.vars]
+SECRET_KEY = "aaa"
+
 # Automatically place your workloads in an optimal location to minimize latency.
 # If you are running back-end logic in a Worker, running it closer to your back-end infrastructure
 # rather than the end user may result in better performance.
@@ -70,9 +73,9 @@ routes = [{ pattern = "drop-api.yankeguo.com", custom_domain = true }]
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#kv-namespaces
-# [[kv_namespaces]]
-# binding = "MY_KV_NAMESPACE"
-# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+[[kv_namespaces]]
+binding = "KV_NONCE_DEDUP"
+id = "f08fa61a90604aa784852f57beccb759"
 
 # Bind an mTLS certificate. Use to present a client certificate when communicating with another service.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#mtls-certificates
