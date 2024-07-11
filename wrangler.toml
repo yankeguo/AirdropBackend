@@ -1,10 +1,10 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "drop-backend"
+name = "airdrop-backend"
 main = "src/index.ts"
 compatibility_date = "2024-07-01"
 compatibility_flags = ["nodejs_compat"]
 
-routes = [{ pattern = "drop-api.yankeguo.com", custom_domain = true }]
+routes = [{ pattern = "airdrop-api.yankeguo.com", custom_domain = true }]
 
 [env.dev.vars]
 SECRET_KEY = "aaa"

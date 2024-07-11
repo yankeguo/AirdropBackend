@@ -1,3 +1,7 @@
-# YGTOGDropBackend
+# AirdropBackend
 
-Cloudflare Worker backend for YGTOGDrop
+Cloudflare Workers for https://airdrop.yankeguo.com
+
+## Credits
+
+GUO YANKE, MIT License
