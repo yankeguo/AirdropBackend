@@ -177,11 +177,11 @@ app.post('/account/github/sign_in', async (c) => {
 			return serverInternalError(await res.text());
 		}
 
-		const { id, login } = (await res.json()) as { id: string; login: string };
+		const { id, login } = (await res.json()) as { id: number; login: string };
 
 		if (!id || !login) return serverInternalError('missing id or login');
 
-		await sessionSave(c, SESSION_KEY_GITHUB, { id, username: login });
+		await sessionSave(c, SESSION_KEY_GITHUB, { id: id.toString(), username: login });
 	}
 
 	return c.json({ success: true });
