@@ -62,13 +62,15 @@ export const WEBSITES: Website[] = [
 	},
 ];
 
-export const DEFAULT_SESSION_AGE = 3600 * 24 * 3;
+export const DEFAULT_SESSION_MAX_AGE = 3600 * 24 * 3;
 
 export const DEFAULT_COOKIE_OPTIONS: CookieOptions = {
 	path: '/',
-	maxAge: DEFAULT_SESSION_AGE,
+	maxAge: DEFAULT_SESSION_MAX_AGE,
 	httpOnly: true,
 	secure: true,
 	partitioned: true,
 	sameSite: 'None',
 };
+
+export const OWNER_GITHUB_USERNAME = 'yankeguo';

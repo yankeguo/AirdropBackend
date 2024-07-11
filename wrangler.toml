@@ -10,3 +10,6 @@ routes = [{ pattern = "airdrop-api.yankeguo.com", custom_domain = true }]
 binding = "DB_AIRDROP"
 database_name = "airdrop"
 database_id = "ddab7526-392a-43f8-b890-05111d472b8a"
+
+[triggers]
+crons = ['* * * * *']

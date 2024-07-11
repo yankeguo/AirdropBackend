@@ -1,9 +1,14 @@
 import { HTTPException } from 'hono/http-exception';
+import { StatusCode } from 'hono/utils/http-status';
 
-export function badRequest(message: string): never {
+export function raise(status: StatusCode, message: string): never {
+	throw new HTTPException(status, { message });
+}
+
+export function raise400(message: string): never {
 	throw new HTTPException(400, { message });
 }
 
-export function serverInternalError(message: string): never {
+export function raise500(message: string): never {
 	throw new HTTPException(500, { message });
 }

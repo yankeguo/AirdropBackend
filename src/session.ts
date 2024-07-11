@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { getSignedCookie, deleteCookie, setSignedCookie } from 'hono/cookie';
-import { Bindings, DEFAULT_COOKIE_OPTIONS, DEFAULT_SESSION_AGE } from './config';
+import { Bindings, DEFAULT_COOKIE_OPTIONS, DEFAULT_SESSION_MAX_AGE } from './config';
 
 function _sessionEncode(value: object, maxAge: number): string {
 	const exp = Math.floor(Date.now() / 1000 + maxAge);
@@ -33,7 +33,7 @@ export function sessionClear(c: Context<{ Bindings: Bindings }>, name: string) {
 }
 
 export async function sessionSave(c: Context<{ Bindings: Bindings }>, name: string, value: any, maxAge?: number) {
-	maxAge = maxAge ?? DEFAULT_SESSION_AGE;
+	maxAge = maxAge ?? DEFAULT_SESSION_MAX_AGE;
 	await setSignedCookie(c, name, _sessionEncode(value, maxAge), c.env.SECRET_KEY, { ...DEFAULT_COOKIE_OPTIONS, maxAge });
 }
 
