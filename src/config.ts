@@ -10,7 +10,7 @@ export type Bindings = {
 	GITHUB_CLIENT_ID: string;
 	GITHUB_CLIENT_SECRET: string;
 
-	KV_NONCE_DEDUP: KVNamespace;
+	DB_AIRDROP: D1Database;
 };
 
 type BindingsKey = keyof Bindings;
@@ -23,7 +23,7 @@ export const BINDING_KEYS: BindingsKey[] = [
 	'GITHUB_PREVIEW_CLIENT_SECRET',
 	'GITHUB_CLIENT_ID',
 	'GITHUB_CLIENT_SECRET',
-	'KV_NONCE_DEDUP',
+	'DB_AIRDROP',
 ];
 
 export interface Website {
