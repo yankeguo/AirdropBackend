@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { setCookie } from 'hono/cookie';
-import { Bindings, BINDING_KEYS, DEFAULT_COOKIE_OPTIONS, WEBSITES, GITHUB_CLIENT_USER_AGENT } from './config';
+import { Bindings, BINDING_KEYS, WEBSITES } from './config';
 import { sessionClear, sessionLoad, sessionSave } from './session';
 import { badRequest, serverInternalError } from './error';
 import { HTTPException } from 'hono/http-exception';
 import { randomHex } from './crypto';
+import { githubCreateAccessToken, githubCreateAuthorizeURL, githubGetUser } from './github';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -96,19 +96,19 @@ app.get('/account/github', async (c) => {
 app.get('/account/github/authorize_url', async (c) => {
 	const website = WEBSITES.find((w) => w.host === c.req.query('host')) ?? badRequest('invalid host');
 
-	const clientId = (c.env[website.keys.GITHUB_CLIENT_ID] as string) ?? serverInternalError('missing GITHUB_CLIENT_ID');
-
+	const client_id = (c.env[website.keys.GITHUB_CLIENT_ID] as string) ?? serverInternalError('missing GITHUB_CLIENT_ID');
+	const redirect_uri = `${website.url}/oauth/github/callback`;
 	const state = randomHex(8);
 
-	const u = new URL('https://github.com/login/oauth/authorize');
-	u.searchParams.set('client_id', clientId);
-	u.searchParams.set('redirect_uri', `${website.url}/oauth/github/callback`);
-	u.searchParams.set('prompt', 'select_account');
-	u.searchParams.set('state', state);
+	const url = githubCreateAuthorizeURL({
+		client_id,
+		redirect_uri,
+		state,
+	});
 
 	await sessionSave(c, SESSION_KEY_GITHUB_STATE, { state }, 600);
 
-	return c.json({ url: u.toString() });
+	return c.json({ url });
 });
 
 app.post('/account/github/sign_out', async (c) => {
@@ -135,54 +135,16 @@ app.post('/account/github/sign_in', async (c) => {
 		return badRequest('invalid state');
 	}
 
-	let access_token: string;
+	const access_token = await githubCreateAccessToken({
+		client_id,
+		client_secret,
+		code,
+		redirect_uri,
+	});
 
-	{
-		const res = await fetch('https://github.com/login/oauth/access_token', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Accept: 'application/json',
-				'User-Agent': GITHUB_CLIENT_USER_AGENT,
-			},
-			body: JSON.stringify({
-				client_id,
-				client_secret,
-				code,
-				redirect_uri,
-			}),
-		});
+	const { id, login } = await githubGetUser(access_token);
 
-		if (res.status !== 200) {
-			return serverInternalError(await res.text());
-		}
-
-		const { access_token: _access_token } = (await res.json()) as { access_token: string };
-
-		if (!_access_token) return serverInternalError('missing access_token');
-
-		access_token = _access_token;
-	}
-
-	{
-		const res = await fetch('https://api.github.com/user', {
-			headers: {
-				Accept: 'application/json',
-				'User-Agent': GITHUB_CLIENT_USER_AGENT,
-				Authorization: `Bearer ${access_token}`,
-			},
-		});
-
-		if (res.status !== 200) {
-			return serverInternalError(await res.text());
-		}
-
-		const { id, login } = (await res.json()) as { id: number; login: string };
-
-		if (!id || !login) return serverInternalError('missing id or login');
-
-		await sessionSave(c, SESSION_KEY_GITHUB, { id: id.toString(), username: login });
-	}
+	await sessionSave(c, SESSION_KEY_GITHUB, { id: id.toString(), username: login });
 
 	return c.json({ success: true });
 });

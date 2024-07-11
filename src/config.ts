@@ -72,5 +72,3 @@ export const DEFAULT_COOKIE_OPTIONS: CookieOptions = {
 	partitioned: true,
 	sameSite: 'None',
 };
-
-export const GITHUB_CLIENT_USER_AGENT = 'yankeguo/drop-client';
