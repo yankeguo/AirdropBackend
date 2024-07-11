@@ -28,8 +28,8 @@ function _sessionDecode<T>(raw: string): T | null {
 	}
 }
 
-export function sessionClear(c: Context<{ Bindings: Bindings }>, key: string) {
-	deleteCookie(c, key, DEFAULT_COOKIE_OPTIONS);
+export function sessionClear(c: Context<{ Bindings: Bindings }>, name: string) {
+	deleteCookie(c, name, DEFAULT_COOKIE_OPTIONS);
 }
 
 export async function sessionSave(c: Context<{ Bindings: Bindings }>, name: string, value: any, maxAge?: number) {

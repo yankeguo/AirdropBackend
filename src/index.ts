@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { setCookie } from 'hono/cookie';
 import { Bindings, BINDING_KEYS, DEFAULT_COOKIE_OPTIONS, WEBSITES, GITHUB_CLIENT_USER_AGENT } from './config';
-import { sessionLoad, sessionSave } from './session';
+import { sessionClear, sessionLoad, sessionSave } from './session';
 import { badRequest, serverInternalError } from './error';
 import { HTTPException } from 'hono/http-exception';
 import { randomHex } from './crypto';
@@ -109,6 +109,11 @@ app.get('/account/github/authorize_url', async (c) => {
 	await sessionSave(c, SESSION_KEY_GITHUB_STATE, { state }, 600);
 
 	return c.json({ url: u.toString() });
+});
+
+app.post('/account/github/sign_out', async (c) => {
+	sessionClear(c, SESSION_KEY_GITHUB);
+	return c.json({ success: true });
 });
 
 app.post('/account/github/sign_in', async (c) => {
