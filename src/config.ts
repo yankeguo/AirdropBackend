@@ -45,16 +45,16 @@ export const WEBSITES: Website[] = [
 		},
 	},
 	{
-		url: 'https://drop-preview.yankeguo.com',
-		host: 'drop-preview.yankeguo.com',
+		url: 'https://airdrop-preview.yankeguo.com',
+		host: 'airdrop-preview.yankeguo.com',
 		keys: {
 			GITHUB_CLIENT_ID: 'GITHUB_PREVIEW_CLIENT_ID',
 			GITHUB_CLIENT_SECRET: 'GITHUB_PREVIEW_CLIENT_SECRET',
 		},
 	},
 	{
-		url: 'https://drop.yankeguo.com',
-		host: 'drop.yankeguo.com',
+		url: 'https://airdrop.yankeguo.com',
+		host: 'airdrop.yankeguo.com',
 		keys: {
 			GITHUB_CLIENT_ID: 'GITHUB_CLIENT_ID',
 			GITHUB_CLIENT_SECRET: 'GITHUB_CLIENT_SECRET',
