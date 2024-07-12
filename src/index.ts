@@ -1,15 +1,16 @@
 import { Hono, Context } from 'hono';
 import { cors } from 'hono/cors';
-import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS } from './config';
+import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS, WEB3 } from './config';
 import { sessionClear, sessionLoad, sessionSave } from './session';
 import { raise400, raise500 } from './error';
 import { HTTPException } from 'hono/http-exception';
 import { randomHex } from './crypto';
 import { githubCheckIsFollowing, githubCreateAccessToken, githubCreateAuthorizeURL, githubCreateUserID, githubGetUser } from './github';
 import { airdropMarkEligible, useDatabase } from './database';
-import { ethers } from 'ethers';
 import { tAirdrops } from './schema';
 import { eq } from 'drizzle-orm/sqlite-core/expressions';
+import { scheduleMintAirdrops } from './schedule';
+import { isAddress as isEthereumAddress } from 'web3-validator';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -49,6 +50,10 @@ app.get('/debug/session/load', async (c) => {
 
 app.get('/debug/error', async (c) => {
 	raise400('This is a bad request');
+});
+
+app.get('/debug/minter', async (c) => {
+	return c.json({});
 });
 
 app.get('/debug/bindings', async (c) => {
@@ -178,7 +183,7 @@ app.post('/airdrop/claim', async (c) => {
 	if (typeof nft_id !== 'string' || !nft_id) {
 		raise400('invalid nft_id');
 	}
-	if (typeof address !== 'string' || !address || !ethers.isAddress(address)) {
+	if (typeof address !== 'string' || !address || !isEthereumAddress(address)) {
 		raise400('invalid address');
 	}
 
@@ -273,7 +278,11 @@ export default {
 	async fetch(req: Request, env: Bindings, ctx: ExecutionContext): Promise<Response> {
 		return app.fetch(req, env, ctx);
 	},
-	async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {},
+
+	scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+		ctx.waitUntil(Promise.all([scheduleMintAirdrops(event, env, ctx)]));
+	},
+
 	async queue(batch: MessageBatch, env: Bindings, ctx: ExecutionContext): Promise<void> {
 		batch.ackAll();
 	},

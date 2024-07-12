@@ -22,7 +22,8 @@
 	"dependencies": {
 		"@yankeguo/ygtog": "^0.20240712100743.0",
 		"drizzle-orm": "^0.32.0",
-		"ethers": "^6.13.1",
-		"hono": "^4.4.12"
+		"hono": "^4.4.12",
+		"web3": "^4.11.0",
+		"web3-validator": "^2.0.6"
 	}
 }

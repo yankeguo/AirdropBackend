@@ -1,5 +1,6 @@
 import { YGTOG } from '@yankeguo/ygtog';
 import { CookieOptions } from 'hono/utils/cookie';
+import Web3 from 'web3';
 
 export type Bindings = {
 	SECRET_KEY: string;
@@ -10,6 +11,8 @@ export type Bindings = {
 	GITHUB_PREVIEW_CLIENT_SECRET: string;
 	GITHUB_CLIENT_ID: string;
 	GITHUB_CLIENT_SECRET: string;
+
+	MINTER_MNEMONIC: string;
 
 	DB_AIRDROP: D1Database;
 };
@@ -25,6 +28,7 @@ export const BINDING_KEYS: BindingsKey[] = [
 	'GITHUB_CLIENT_ID',
 	'GITHUB_CLIENT_SECRET',
 	'DB_AIRDROP',
+	'MINTER_MNEMONIC',
 ];
 
 export interface Website {
@@ -112,3 +116,5 @@ export const NFTS: NFT[] = YGTOG.items
 			image: item.metadata.image,
 		};
 	});
+
+export const GNOSIS_ENDPOINT = 'https://rpc.gnosischain.com';

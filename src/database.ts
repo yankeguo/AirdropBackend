@@ -4,7 +4,11 @@ import { tAirdrops } from './schema';
 import { Context } from 'hono';
 
 export function useDatabase(c: Context<{ Bindings: Bindings }>) {
-	return drizzle(c.env.DB_AIRDROP, { schema: { tAirdrops } });
+	return createDatabase(c.env.DB_AIRDROP);
+}
+
+export function createDatabase(db: D1Database) {
+	return drizzle(db, { schema: { tAirdrops } });
 }
 
 export async function airdropMarkEligible(db: ReturnType<typeof useDatabase>, nftId: string, userId: string) {
