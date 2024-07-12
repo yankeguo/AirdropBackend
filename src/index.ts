@@ -197,7 +197,7 @@ app.post('/airdrop/claim', async (c) => {
 	});
 
 	if (!airdrop) {
-		raise400('not eligible');
+		raise400('not eligible or already claimed');
 	}
 
 	await db
