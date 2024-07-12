@@ -1,6 +1,6 @@
 import { Hono, Context } from 'hono';
 import { cors } from 'hono/cors';
-import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS, WEB3 } from './config';
+import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS } from './config';
 import { sessionClear, sessionLoad, sessionSave } from './session';
 import { raise400, raise500 } from './error';
 import { HTTPException } from 'hono/http-exception';
