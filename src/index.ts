@@ -169,9 +169,11 @@ app.get('/airdrop/list', async (c) => {
 
 	const db = useDatabase(c);
 
-	const records = userIds.length ? await db.query.tAirdrops.findMany({
-		where: (users, { inArray }) => inArray(users.user_id, userIds),
-	}) : [];
+	const records = userIds.length
+		? await db.query.tAirdrops.findMany({
+				where: (users, { inArray }) => inArray(users.user_id, userIds),
+			})
+		: [];
 
 	const result = NFTS.map((nft) => {
 		let is_eligible = false;
@@ -223,7 +225,7 @@ export default {
 	async fetch(req: Request, env: Bindings, ctx: ExecutionContext): Promise<Response> {
 		return app.fetch(req, env, ctx);
 	},
-	async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) { },
+	async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {},
 	async queue(batch: MessageBatch, env: Bindings, ctx: ExecutionContext): Promise<void> {
 		batch.ackAll();
 	},
