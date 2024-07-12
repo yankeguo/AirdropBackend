@@ -40,19 +40,6 @@ app.get('/', async (c) => {
 	return c.json({ message: 'Hello World!' });
 });
 
-app.get('/debug/session/save', async (c) => {
-	await sessionSave(c, '_debug', { date: `${Date.now()}` }, 600);
-	return c.json({});
-});
-
-app.get('/debug/session/load', async (c) => {
-	return c.json((await sessionLoad<{ date: string }>(c, '_debug')) ?? {});
-});
-
-app.get('/debug/error', async (c) => {
-	raise400('This is a bad request');
-});
-
 app.get('/debug/minter', async (c) => {
 	const web3 = new Web3(GNOSIS_ENDPOINT);
 	const wallet = web3.eth.accounts.wallet.add(c.env.MINTER_PRIVATE_KEY);
