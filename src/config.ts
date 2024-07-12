@@ -1,3 +1,4 @@
+import { YGTOG } from '@yankeguo/ygtog';
 import { CookieOptions } from 'hono/utils/cookie';
 
 export type Bindings = {
@@ -74,3 +75,35 @@ export const DEFAULT_COOKIE_OPTIONS: CookieOptions = {
 };
 
 export const OWNER_GITHUB_USERNAME = 'yankeguo';
+
+export interface NFT {
+	// id, a meaningful string (off-chain)
+	id: string;
+	// chain, the chain name
+	chain: string;
+	// standard
+	standard: string;
+	// contract, the contract address, format of '0x...'
+	contract: string;
+	// token, the token id, decimal string, format of '12345'
+	token: string;
+	// name, the name of the NFT
+	name: string;
+	// description, the description of the NFT
+	description: string;
+	// image, the image url
+	image: string;
+}
+
+export const NFTS: NFT[] = YGTOG.items.map((item) => {
+	return {
+		id: item.key,
+		chain: YGTOG.contract.chain,
+		standard: YGTOG.contract.standard,
+		contract: YGTOG.contract.address,
+		token: item.id.toString(),
+		name: item.metadata.name,
+		description: item.metadata.description,
+		image: item.metadata.image,
+	};
+});
