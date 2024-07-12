@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, Context } from 'hono';
 import { cors } from 'hono/cors';
 import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS } from './config';
 import { sessionClear, sessionLoad, sessionSave } from './session';
@@ -7,6 +7,9 @@ import { HTTPException } from 'hono/http-exception';
 import { randomHex } from './crypto';
 import { githubCheckIsFollowing, githubCreateAccessToken, githubCreateAuthorizeURL, githubCreateUserID, githubGetUser } from './github';
 import { airdropMarkEligible, useDatabase } from './database';
+import { ethers } from 'ethers';
+import { tAirdrops } from './schema';
+import { eq } from 'drizzle-orm/sqlite-core/expressions';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -158,7 +161,7 @@ app.post('/account/github/sign_in', async (c) => {
 	return c.json({ success: true });
 });
 
-app.get('/airdrop/list', async (c) => {
+async function collectSignedUserIds(c: Context<{ Bindings: Bindings }>) {
 	const userIds: string[] = [];
 
 	// load github user id
@@ -166,6 +169,51 @@ app.get('/airdrop/list', async (c) => {
 	if (account) {
 		userIds.push(githubCreateUserID(account.id));
 	}
+
+	return userIds;
+}
+
+app.post('/airdrop/claim', async (c) => {
+	const { nft_id, address } = (await c.req.json()) as { nft_id: string; address: string };
+	if (typeof nft_id !== 'string' || !nft_id) {
+		raise400('invalid nft_id');
+	}
+	if (typeof address !== 'string' || !address || !ethers.isAddress(address)) {
+		raise400('invalid address');
+	}
+
+	const userIds = await collectSignedUserIds(c);
+
+	if (userIds.length === 0) {
+		raise400('no signed in user');
+	}
+
+	const db = useDatabase(c);
+
+	const airdrop = await db.query.tAirdrops.findFirst({
+		where: (airdrops, { eq, and, inArray }) => {
+			return and(eq(airdrops.nft_id, nft_id), inArray(airdrops.user_id, userIds), eq(airdrops.is_eligible, 1), eq(airdrops.is_claimed, 0));
+		},
+	});
+
+	if (!airdrop) {
+		raise400('not eligible');
+	}
+
+	await db
+		.update(tAirdrops)
+		.set({
+			is_claimed: 1,
+			claimed_at: Date.now() / 1000,
+			claim_address: address,
+		})
+		.where(eq(tAirdrops.id, airdrop.id));
+
+	return c.json({ success: true });
+});
+
+app.get('/airdrop/list', async (c) => {
+	const userIds = await collectSignedUserIds(c);
 
 	const db = useDatabase(c);
 
