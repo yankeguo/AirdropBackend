@@ -1,6 +1,5 @@
 import { YGTOG } from '@yankeguo/ygtog';
 import { CookieOptions } from 'hono/utils/cookie';
-import Web3 from 'web3';
 
 export type Bindings = {
 	SECRET_KEY: string;
@@ -15,6 +14,7 @@ export type Bindings = {
 	MINTER_PRIVATE_KEY: string;
 
 	DB_AIRDROP: D1Database;
+	QUEUE_AIRDROP_MINT: Queue<{ airdrop_id: string }>;
 };
 
 type BindingsKey = keyof Bindings;
@@ -29,6 +29,7 @@ export const BINDING_KEYS: BindingsKey[] = [
 	'GITHUB_CLIENT_SECRET',
 	'DB_AIRDROP',
 	'MINTER_PRIVATE_KEY',
+	'QUEUE_AIRDROP_MINT',
 ];
 
 export interface Website {
@@ -118,3 +119,5 @@ export const NFTS: NFT[] = YGTOG.items
 	});
 
 export const GNOSIS_ENDPOINT = 'https://rpc.gnosischain.com';
+
+export const QUEUE_NAME_AIRDROP_MINT = 'airdrop-mint';

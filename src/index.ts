@@ -1,6 +1,6 @@
 import { Hono, Context } from 'hono';
 import { cors } from 'hono/cors';
-import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS } from './config';
+import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS, GNOSIS_ENDPOINT, QUEUE_NAME_AIRDROP_MINT } from './config';
 import { sessionClear, sessionLoad, sessionSave } from './session';
 import { raise400, raise500 } from './error';
 import { HTTPException } from 'hono/http-exception';
@@ -9,9 +9,9 @@ import { githubCheckIsFollowing, githubCreateAccessToken, githubCreateAuthorizeU
 import { airdropMarkEligible, useDatabase } from './database';
 import { tAirdrops } from './schema';
 import { eq } from 'drizzle-orm/sqlite-core/expressions';
-import { scheduleMintAirdrops } from './schedule';
 import { isAddress as isEthereumAddress } from 'web3-validator';
-import * as web3 from 'web3';
+import { Web3 } from 'web3';
+import { queueAirdropMint } from './queue';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -54,8 +54,13 @@ app.get('/debug/error', async (c) => {
 });
 
 app.get('/debug/minter', async (c) => {
-	const account = web3.eth.accounts.privateKeyToAccount(c.env.MINTER_PRIVATE_KEY);
-	return c.json({ address: account.address });
+	const web3 = new Web3(GNOSIS_ENDPOINT);
+	const wallet = web3.eth.accounts.wallet.add(c.env.MINTER_PRIVATE_KEY);
+	const address = wallet.at(0)?.address;
+
+	return c.json({
+		address,
+	});
 });
 
 app.get('/debug/bindings', async (c) => {
@@ -216,6 +221,8 @@ app.post('/airdrop/claim', async (c) => {
 		})
 		.where(eq(tAirdrops.id, airdrop.id));
 
+	await c.env.QUEUE_AIRDROP_MINT.send({ airdrop_id: airdrop.id });
+
 	return c.json({ success: true });
 });
 
@@ -281,11 +288,26 @@ export default {
 		return app.fetch(req, env, ctx);
 	},
 
-	scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-		ctx.waitUntil(Promise.all([scheduleMintAirdrops(event, env, ctx)]));
-	},
+	scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {},
 
 	async queue(batch: MessageBatch, env: Bindings, ctx: ExecutionContext): Promise<void> {
-		batch.ackAll();
+		const fn: (env: Bindings, ctx: ExecutionContext, args: any) => Promise<void> = (function () {
+			switch (batch.queue) {
+				case QUEUE_NAME_AIRDROP_MINT:
+					return queueAirdropMint;
+				default:
+					throw new Error('unknown queue');
+			}
+		})();
+
+		for (const msg of batch.messages) {
+			try {
+				await fn(env, ctx, msg.body);
+				msg.ack();
+			} catch (e) {
+				console.error(e);
+				msg.retry();
+			}
+		}
 	},
 };

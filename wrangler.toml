@@ -14,5 +14,10 @@ binding = "DB_AIRDROP"
 database_name = "airdrop"
 database_id = "ddab7526-392a-43f8-b890-05111d472b8a"
 
-[triggers]
-crons = ['* * * * *']
+[[queues.consumers]]
+queue = 'airdrop-mint'
+max_concurrency = 1
+
+[[queues.producers]]
+queue = 'airdrop-mint'
+binding = 'QUEUE_AIRDROP_MINT'
