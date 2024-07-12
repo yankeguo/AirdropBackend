@@ -6,7 +6,7 @@ import { raise400, raise500 } from './error';
 import { HTTPException } from 'hono/http-exception';
 import { randomHex } from './crypto';
 import { githubCheckIsFollowing, githubCreateAccessToken, githubCreateAuthorizeURL, githubCreateUserID, githubGetUser } from './github';
-import { useDatabase } from './database';
+import { airdropMarkEligible, useDatabase } from './database';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -146,6 +146,12 @@ app.post('/account/github/sign_in', async (c) => {
 	const { id, login } = await githubGetUser(access_token);
 
 	const is_following = await githubCheckIsFollowing(access_token, OWNER_GITHUB_USERNAME);
+
+	if (is_following) {
+		const nftId = `github_follower_${new Date().getFullYear()}`;
+
+		await airdropMarkEligible(useDatabase(c), nftId, githubCreateUserID(id.toString()));
+	}
 
 	await sessionSave(c, SESSION_KEY_GITHUB, { id: id.toString(), username: login });
 
