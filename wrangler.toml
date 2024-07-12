@@ -6,6 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 
 routes = [{ pattern = "airdrop-api.yankeguo.com", custom_domain = true }]
 
+[placement]
+mode = "smart"
+
 [[d1_databases]]
 binding = "DB_AIRDROP"
 database_name = "airdrop"

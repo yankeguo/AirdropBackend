@@ -91,6 +91,8 @@ export interface NFT {
 	name: string;
 	// description, the description of the NFT
 	description: string;
+	// helper
+	helper: string;
 	// image, the image url
 	image: string;
 }
@@ -104,6 +106,7 @@ export const NFTS: NFT[] = YGTOG.items.map((item) => {
 		token: item.id.toString(),
 		name: item.metadata.name,
 		description: item.metadata.description,
+		helper: item.helper,
 		image: item.metadata.image,
 	};
 });

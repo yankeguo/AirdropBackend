@@ -1,11 +1,12 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME } from './config';
+import { Bindings, BINDING_KEYS, WEBSITES, OWNER_GITHUB_USERNAME, NFTS } from './config';
 import { sessionClear, sessionLoad, sessionSave } from './session';
 import { raise400, raise500 } from './error';
 import { HTTPException } from 'hono/http-exception';
 import { randomHex } from './crypto';
-import { githubCheckIsFollowing, githubCreateAccessToken, githubCreateAuthorizeURL, githubGetUser } from './github';
+import { githubCheckIsFollowing, githubCreateAccessToken, githubCreateAuthorizeURL, githubCreateUserID, githubGetUser } from './github';
+import { useDatabase } from './database';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -149,6 +150,67 @@ app.post('/account/github/sign_in', async (c) => {
 	await sessionSave(c, SESSION_KEY_GITHUB, { id: id.toString(), username: login });
 
 	return c.json({ success: true });
+});
+
+app.get('/airdrop/list', async (c) => {
+	const userIds: string[] = [];
+
+	// load github user id
+	const account = await sessionLoad<GitHubAccount>(c, SESSION_KEY_GITHUB);
+	if (account) {
+		userIds.push(githubCreateUserID(account.id));
+	}
+
+	const db = useDatabase(c);
+
+	const records = await db.query.tAirdrops.findMany({
+		where: (users, { inArray }) => inArray(users.user_id, userIds),
+	});
+
+	const result = NFTS.map((nft) => {
+		let is_eligible = false;
+		let eligible_at: number | null = null;
+		let is_claimed = false;
+		let claimed_at: number | null = null;
+		let claim_address: string | null = null;
+		let is_minted = false;
+		let minted_at: number | null = null;
+		let mint_tx: string | null = null;
+
+		for (const record of records) {
+			if (record.nft_id !== nft.id) {
+				continue;
+			}
+			if (record.is_eligible) {
+				is_eligible = true;
+				eligible_at = record.eligible_at;
+			}
+			if (record.is_claimed) {
+				is_claimed = true;
+				claimed_at = record.claimed_at;
+				claim_address = record.claim_address;
+			}
+			if (record.is_minted) {
+				is_minted = true;
+				minted_at = record.minted_at;
+				mint_tx = record.mint_tx;
+			}
+		}
+
+		return {
+			...nft,
+			is_eligible,
+			eligible_at,
+			is_claimed,
+			claimed_at,
+			claim_address,
+			is_minted,
+			minted_at,
+			mint_tx,
+		};
+	});
+
+	return c.json(result);
 });
 
 export default {

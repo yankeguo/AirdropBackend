@@ -94,3 +94,7 @@ export async function githubCheckIsFollowing(access_token: string, username: str
 
 	return raise500(await res.text());
 }
+
+export function githubCreateUserID(id: number | string): string {
+	return `github::${id}`;
+}
