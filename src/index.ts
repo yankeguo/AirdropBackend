@@ -11,6 +11,7 @@ import { tAirdrops } from './schema';
 import { eq } from 'drizzle-orm/sqlite-core/expressions';
 import { scheduleMintAirdrops } from './schedule';
 import { isAddress as isEthereumAddress } from 'web3-validator';
+import * as web3 from 'web3';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -53,7 +54,8 @@ app.get('/debug/error', async (c) => {
 });
 
 app.get('/debug/minter', async (c) => {
-	return c.json({});
+	const account = web3.eth.accounts.privateKeyToAccount(c.env.MINTER_PRIVATE_KEY);
+	return c.json({ address: account.address });
 });
 
 app.get('/debug/bindings', async (c) => {

@@ -12,7 +12,7 @@ export type Bindings = {
 	GITHUB_CLIENT_ID: string;
 	GITHUB_CLIENT_SECRET: string;
 
-	MINTER_MNEMONIC: string;
+	MINTER_PRIVATE_KEY: string;
 
 	DB_AIRDROP: D1Database;
 };
@@ -28,7 +28,7 @@ export const BINDING_KEYS: BindingsKey[] = [
 	'GITHUB_CLIENT_ID',
 	'GITHUB_CLIENT_SECRET',
 	'DB_AIRDROP',
-	'MINTER_MNEMONIC',
+	'MINTER_PRIVATE_KEY',
 ];
 
 export interface Website {
