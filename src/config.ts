@@ -97,16 +97,18 @@ export interface NFT {
 	image: string;
 }
 
-export const NFTS: NFT[] = YGTOG.items.map((item) => {
-	return {
-		id: item.key,
-		chain: YGTOG.contract.chain,
-		standard: YGTOG.contract.standard,
-		contract: YGTOG.contract.address,
-		token: item.id.toString(),
-		name: item.metadata.name,
-		description: item.metadata.description,
-		helper: item.helper,
-		image: item.metadata.image,
-	};
-});
+export const NFTS: NFT[] = YGTOG.items
+	.filter((item) => item.id !== 1n)
+	.map((item) => {
+		return {
+			id: item.key,
+			chain: YGTOG.contract.chain,
+			standard: YGTOG.contract.standard,
+			contract: YGTOG.contract.address,
+			token: item.id.toString(),
+			name: item.metadata.name,
+			description: item.metadata.description,
+			helper: item.helper,
+			image: item.metadata.image,
+		};
+	});
