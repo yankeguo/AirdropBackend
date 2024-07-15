@@ -1,7 +1,6 @@
 import { YGTOG } from '@yankeguo/ygtog';
-import { CookieOptions } from 'hono/utils/cookie';
 
-export type Bindings = {
+export type Environment = {
 	SECRET_KEY: string;
 
 	GITHUB_DEV_CLIENT_ID: string;
@@ -17,9 +16,9 @@ export type Bindings = {
 	QUEUE_AIRDROP_MINT: Queue<{ airdrop_id: string }>;
 };
 
-type BindingsKey = keyof Bindings;
+type EnvironmentKey = keyof Environment;
 
-export const BINDING_KEYS: BindingsKey[] = [
+export const ENVIRONMENT_KEYS: EnvironmentKey[] = [
 	'SECRET_KEY',
 	'GITHUB_DEV_CLIENT_ID',
 	'GITHUB_DEV_CLIENT_SECRET',
@@ -36,8 +35,8 @@ export interface Website {
 	url: string;
 	host: string;
 	keys: {
-		GITHUB_CLIENT_ID: BindingsKey;
-		GITHUB_CLIENT_SECRET: BindingsKey;
+		GITHUB_CLIENT_ID: EnvironmentKey;
+		GITHUB_CLIENT_SECRET: EnvironmentKey;
 	};
 }
 
@@ -67,17 +66,6 @@ export const WEBSITES: Website[] = [
 		},
 	},
 ];
-
-export const DEFAULT_SESSION_MAX_AGE = 3600 * 24 * 3;
-
-export const DEFAULT_COOKIE_OPTIONS: CookieOptions = {
-	path: '/',
-	maxAge: DEFAULT_SESSION_MAX_AGE,
-	httpOnly: true,
-	secure: true,
-	partitioned: true,
-	sameSite: 'None',
-};
 
 export const OWNER_GITHUB_USERNAME = 'yankeguo';
 
@@ -116,6 +104,8 @@ export const NFTS: NFT[] = YGTOG.items.map((item) => {
 	};
 });
 
-export const GNOSIS_ENDPOINT = 'https://rpc.gnosischain.com';
+export const RPC_ENDPOINTS: Record<string, string> = {
+	gnosis: 'https://rpc.gnosischain.com',
+};
 
 export const QUEUE_NAME_AIRDROP_MINT = 'airdrop-mint';
