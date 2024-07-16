@@ -319,6 +319,49 @@ export async function twitterGetUser(access_token: string) {
 	return { id: data.data.id as string, username: data.data.username as string };
 }
 
+export async function twitterCheckIsFollowingLegacy(access_token: string, username: string): Promise<boolean> {
+	const url = new URL('https://api.twitter.com/1.1/friendships/lookup.json');
+	url.searchParams.set('screen_name', username);
+
+	const res = await fetch(url.toString(), {
+		headers: {
+			Authorization: `Bearer ${access_token}`,
+			'User-Agent': CLIENT_USER_AGENT,
+		},
+	});
+
+	if (res.status !== 200) {
+		return raise500('twitter/check_is_following: ' + (await res.text()));
+	}
+
+	const data = (await res.json()) as any;
+
+	if (!data) {
+		return raise500('twitter/check_is_following: invalid response data');
+	}
+
+	if (!Array.isArray(data)) {
+		return raise500('twitter/check_is_following: invalid response not array');
+	}
+
+	for (const item of data) {
+		if (typeof item !== 'object') {
+			return raise500('twitter/check_is_following: invalid response item not object');
+		}
+		if (typeof item.screen_name !== 'string') {
+			return raise500('twitter/check_is_following: invalid response item.screen_name');
+		}
+		if (!Array.isArray(item.connections)) {
+			return raise500('twitter/check_is_following: invalid response item.connections not array');
+		}
+		if (item.screen_name === username) {
+			return item.connections.includes('following');
+		}
+	}
+
+	return false;
+}
+
 export async function twitterCheckIsFollowing(access_token: string, username: string): Promise<boolean> {
 	const url = new URL('https://api.twitter.com/2/users/by/username/' + username);
 	url.searchParams.set('user.fields', 'id,connection_status');
