@@ -207,3 +207,27 @@ export async function githubCheckIsFollowing(access_token: string, username: str
 export function githubCreateUserID(id: number | string): string {
 	return `github::${id}`;
 }
+
+export function twitterCreateAuthorizeURL({
+	redirect_uri,
+	client_id,
+	scope,
+	state,
+	code_challenge,
+}: {
+	redirect_uri: string;
+	client_id: string;
+	scope: string[];
+	state: string;
+	code_challenge: string;
+}): string {
+	const u = new URL('https://twitter.com/i/oauth2/authorize');
+	u.searchParams.set('response_type', 'code');
+	u.searchParams.set('client_id', client_id);
+	u.searchParams.set('redirect_uri', redirect_uri);
+	u.searchParams.set('scope', scope.join(' '));
+	u.searchParams.set('state', state);
+	u.searchParams.set('code_challenge', code_challenge);
+	u.searchParams.set('code_challenge_method', 'plain');
+	return u.toString();
+}

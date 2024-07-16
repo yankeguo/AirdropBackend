@@ -17,9 +17,6 @@ importers:
       hono:
         specifier: ^4.4.12
         version: 4.4.12
-      twitter-api-v2:
-        specifier: ^1.17.2
-        version: 1.17.2
       web3:
         specifier: ^4.11.0
         version: 4.11.0(typescript@5.5.3)(zod@3.23.8)
@@ -1566,9 +1563,6 @@ packages:
   tslib@2.6.3:
     resolution: {integrity: sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==}
 
-  twitter-api-v2@1.17.2:
-    resolution: {integrity: sha512-V8QvCkuQ+ydIakwYbVC4cuQxGlvjdRZI0L7TT5v9zGsf+SwX40rv3IFRHB8Z1cXJLcRFT0FI3xG3/f4zwS6cRA==}
-
   type-detect@4.0.8:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}
     engines: {node: '>=4'}
@@ -3009,8 +3003,6 @@ snapshots:
   tr46@0.0.3: {}
 
   tslib@2.6.3: {}
-
-  twitter-api-v2@1.17.2: {}
 
   type-detect@4.0.8: {}
 
