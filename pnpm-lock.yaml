@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@yankeguo/ygtog':
-        specifier: ^0.20240712211447.0
-        version: 0.20240712211447.0
+        specifier: ^0.20240716220800.0
+        version: 0.20240716220800.0
       drizzle-orm:
         specifier: ^0.32.0
         version: 0.32.0(@cloudflare/workers-types@4.20240620.0)(@libsql/client@0.7.0)
@@ -868,8 +868,8 @@ packages:
   '@vitest/utils@1.5.0':
     resolution: {integrity: sha512-BDU0GNL8MWkRkSRdNFvCUCAVOeHaUlVJ9Tx0TYBZyXaaOTmGtUFObzchCivIBrIwKzvZA7A9sCejVhXM2aY98A==}
 
-  '@yankeguo/ygtog@0.20240712211447.0':
-    resolution: {integrity: sha512-zEzHvgjR29eRtVzfwMUq4FH/kLGKLV+W+Hbnr8NO8LuvXZ+jAJNwa8Ud4c+QHq6Cx3A1G0B6T4FqIg8ZDZeACA==}
+  '@yankeguo/ygtog@0.20240716220800.0':
+    resolution: {integrity: sha512-cSYa1eRAMjTqhUZMhvsHkG/8SKA/uJM29dw42FpEuLRlyFT+o7n3A2kwkWRtjG5sbKmHedrmb+mFQBd8VpNzIg==}
 
   abitype@0.7.1:
     resolution: {integrity: sha512-VBkRHTDZf9Myaek/dO3yMmOzB/y2s3Zo6nVU7yaw1G+TvCHAjwaJzNGN9yo4K5D8bU/VZXKP1EJpRhFr862PlQ==}
@@ -2327,7 +2327,7 @@ snapshots:
       loupe: 2.3.7
       pretty-format: 29.7.0
 
-  '@yankeguo/ygtog@0.20240712211447.0': {}
+  '@yankeguo/ygtog@0.20240716220800.0': {}
 
   abitype@0.7.1(typescript@5.5.3)(zod@3.23.8):
     dependencies:
