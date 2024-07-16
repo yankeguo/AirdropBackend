@@ -228,7 +228,7 @@ export const routeAccountTwitterSignIn: RouteAction = async (c) => {
 
 	const user = await twitterGetUser(access_token);
 
-	sessionSave(c, SESSION_KEY_TWITTER, { id: user.id, username: user.username });
+	await sessionSave(c, SESSION_KEY_TWITTER, { id: user.id, username: user.username });
 
 	// twitter is charging damn 100 bucks a month for checking if a user is following another user
 
