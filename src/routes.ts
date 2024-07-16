@@ -235,16 +235,15 @@ export const routeAccountTwitterSignIn: RouteAction = async (c) => {
 	await sessionSave(c, SESSION_KEY_TWITTER, { id: user.id, username: user.username });
 
 	// twitter is charging damn 100 bucks a month for checking if a user is following another user
+	// const is_following = await twitterCheckIsFollowing(access_token, OWNER_TWITTER_USERNAME);
 
-	/*
-	const is_following = await twitterCheckIsFollowing(access_token, OWNER_TWITTER_USERNAME);
+	const is_following = true;
 
 	if (is_following) {
 		const nft_id = `twitter_follower_${new Date().getFullYear()}`;
 
 		await airdropMarkEligible(useDatabase(c), nft_id, twitterCreateUserID(user.id));
 	}
-	*/
 
 	return c.json({ success: true });
 };
