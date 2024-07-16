@@ -267,7 +267,7 @@ export async function twitterCreateAccessToken({
 	});
 
 	if (res.status !== 200) {
-		return raise500(await res.text());
+		return raise500('twitter/create_access_token: ' + (await res.text()));
 	}
 
 	const data = (await res.json()) as any;
@@ -295,7 +295,7 @@ export async function twitterGetUser(access_token: string) {
 	});
 
 	if (res.status !== 200) {
-		return raise500(await res.text());
+		return raise500('twitter/get_user: ' + (await res.text()));
 	}
 
 	const data = (await res.json()) as any;
@@ -331,7 +331,7 @@ export async function twitterCheckIsFollowing(access_token: string, username: st
 	});
 
 	if (res.status !== 200) {
-		return raise500(await res.text());
+		return raise500('twitter/check_is_following: ' + (await res.text()));
 	}
 
 	const data = (await res.json()) as any;
