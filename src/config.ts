@@ -1,6 +1,8 @@
 import { YGTOG } from '@yankeguo/ygtog';
 
 export type Environment = {
+	DEBUG_KEY: string;
+
 	SECRET_KEY: string;
 
 	GITHUB_DEV_CLIENT_ID: string;
@@ -22,6 +24,7 @@ export type Environment = {
 };
 
 export const ENVIRONMENT_KEYS: (keyof Environment)[] = [
+	'DEBUG_KEY',
 	'SECRET_KEY',
 	'GITHUB_DEV_CLIENT_ID',
 	'GITHUB_DEV_CLIENT_SECRET',

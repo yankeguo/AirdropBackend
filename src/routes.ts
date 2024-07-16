@@ -60,17 +60,28 @@ export const routeRoot: RouteAction = async (c) => {
 };
 
 export const routeDebugMinter: RouteAction = async (c) => {
+	if (c.env.DEBUG_KEY !== c.req.query('key')) {
+		return raise400('invalid key');
+	}
+
 	const endpoint = rpcEndpointFromEnv(c.env, 'gnosis') ?? raise500('missing RPC_ENDPOINT_GNOSIS');
 	const web3 = new Web3(endpoint);
 	const wallet = web3.eth.accounts.wallet.add(c.env.MINTER_PRIVATE_KEY);
-	const address = wallet.at(0)?.address;
+	const address = wallet.at(0)?.address!;
+
+	const balance = await web3.eth.getBalance(address);
 
 	return c.json({
 		address,
+		balance: balance.toString(),
 	});
 };
 
 export const routeDebugBindings: RouteAction = async (c) => {
+	if (c.env.DEBUG_KEY !== c.req.query('key')) {
+		return raise400('invalid key');
+	}
+
 	const bindings: Record<string, any> = {};
 
 	for (const key of ENVIRONMENT_KEYS) {
