@@ -7,6 +7,7 @@ import {
 	routeAccountGitHubAuthorizeURL,
 	routeAccountGitHubSignIn,
 	routeAccountGitHubSignOut,
+	routeAccountTwitterAuthorizeURL,
 	routeAirdropClaim,
 	routeAirdropList,
 	routeDebugBindings,
@@ -42,6 +43,7 @@ app.get('/debug/minter', routeDebugMinter);
 app.get('/debug/bindings', routeDebugBindings);
 app.get('/account/github', routeAccountGitHub);
 app.get('/account/github/authorize_url', routeAccountGitHubAuthorizeURL);
+app.get('/account/twitter/authorize_url', routeAccountTwitterAuthorizeURL);
 app.post('/account/github/sign_out', routeAccountGitHubSignOut);
 app.post('/account/github/sign_in', routeAccountGitHubSignIn);
 app.post('/airdrop/claim', routeAirdropClaim);

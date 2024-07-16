@@ -19,6 +19,7 @@ import {
 	useDatabase,
 	githubCreateUserID,
 } from './utility';
+import TwitterApi from 'twitter-api-v2';
 
 type RouteFn = (c: Context<{ Bindings: Environment }>) => Promise<Response>;
 
@@ -82,6 +83,25 @@ export const routeAccountGitHub: RouteFn = async (c) => {
 			username: '',
 		},
 	);
+};
+
+const SESSION_KEY_TWITTER_STATE = '_twitter_state';
+
+interface TwitterState {
+	codeVerifier: string;
+	state: string;
+}
+
+export const routeAccountTwitterAuthorizeURL: RouteFn = async (c) => {
+	const website = WEBSITES.find((w) => w.host === c.req.query('host')) ?? raise400('invalid host');
+	const clientId = (c.env[website.keys.TWITTER_CLIENT_ID] as string) ?? raise500('missing TWITTER_CLIENT_ID');
+	const clientSecret = (c.env[website.keys.TWITTER_CLIENT_SECRET] as string) ?? raise500('missing TWITTER_CLIENT_SECRET');
+	const client = new TwitterApi({ clientId, clientSecret });
+	const { url, codeVerifier, state } = client.generateOAuth2AuthLink(`${website.url}/oauth/twitter/callback`, {
+		scope: ['tweet.read', 'follows.read', 'users.read'],
+	});
+	await sessionSave(c, SESSION_KEY_TWITTER_STATE, { codeVerifier, state }, 600);
+	return c.json({ url });
 };
 
 export const routeAccountGitHubAuthorizeURL: RouteFn = async (c) => {

@@ -23,6 +23,7 @@
 		"@yankeguo/ygtog": "^0.20240712211447.0",
 		"drizzle-orm": "^0.32.0",
 		"hono": "^4.4.12",
+		"twitter-api-v2": "^1.17.2",
 		"web3": "^4.11.0",
 		"web3-validator": "^2.0.6"
 	}
