@@ -229,7 +229,10 @@ export const routeAccountTwitterSignIn: RouteAction = async (c) => {
 
 	sessionSave(c, SESSION_KEY_TWITTER, { id: user.id, username: user.username });
 
-	const is_following = await twitterCheckIsFollowing(access_token, OWNER_TWITTER_USERNAME);
+	// unless you pay 100 dollars a month, twitter api does not provide a way to check if a user is following another user
+	// so just pretend that the user is following the owner
+	// const is_following = await twitterCheckIsFollowing(access_token, OWNER_TWITTER_USERNAME);
+	const is_following = true;
 
 	if (is_following) {
 		const nft_id = `twitter_follower_${new Date().getFullYear()}`;
