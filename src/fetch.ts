@@ -7,7 +7,10 @@ import {
 	routeAccountGitHubAuthorizeURL,
 	routeAccountGitHubSignIn,
 	routeAccountGitHubSignOut,
+	routeAccountTwitter,
 	routeAccountTwitterAuthorizeURL,
+	routeAccountTwitterSignIn,
+	routeAccountTwitterSignOut,
 	routeAirdropClaim,
 	routeAirdropList,
 	routeDebugBindings,
@@ -41,9 +44,12 @@ app.onError((e, c) => {
 app.get('/', routeRoot);
 app.get('/debug/minter', routeDebugMinter);
 app.get('/debug/bindings', routeDebugBindings);
+app.get('/account/twitter', routeAccountTwitter);
+app.get('/account/twitter/authorize_url', routeAccountTwitterAuthorizeURL);
+app.get('/account/twitter/sign_out', routeAccountTwitterSignOut);
+app.get('/account/twitter/sign_in', routeAccountTwitterSignIn);
 app.get('/account/github', routeAccountGitHub);
 app.get('/account/github/authorize_url', routeAccountGitHubAuthorizeURL);
-app.get('/account/twitter/authorize_url', routeAccountTwitterAuthorizeURL);
 app.post('/account/github/sign_out', routeAccountGitHubSignOut);
 app.post('/account/github/sign_in', routeAccountGitHubSignIn);
 app.post('/airdrop/claim', routeAirdropClaim);

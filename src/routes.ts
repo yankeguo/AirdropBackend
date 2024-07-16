@@ -1,6 +1,6 @@
 import { Web3 } from 'web3';
 import { isAddress as isEthereumAddress } from 'web3-validator';
-import { Environment, ENVIRONMENT_KEYS, NFTS, OWNER_GITHUB_USERNAME, RPC_ENDPOINTS, WEBSITES } from './config';
+import { Environment, ENVIRONMENT_KEYS, NFTS, OWNER_GITHUB_USERNAME, OWNER_TWITTER_USERNAME, RPC_ENDPOINTS, WEBSITES } from './config';
 import { Context } from 'hono';
 import { eq } from 'drizzle-orm';
 import { tAirdrops } from './schema';
@@ -19,15 +19,46 @@ import {
 	useDatabase,
 	githubCreateUserID,
 	twitterCreateAuthorizeURL,
+	twitterCreateAccessToken,
+	twitterGetUser,
+	twitterCheckIsFollowing,
+	twitterCreateUserID,
 } from './utility';
 
-type RouteFn = (c: Context<{ Bindings: Environment }>) => Promise<Response>;
+type RouteAction = (c: Context<{ Bindings: Environment }>) => Promise<Response>;
 
-export const routeRoot: RouteFn = async (c) => {
+interface GitHubState {
+	state: string;
+}
+
+interface GitHubAccount {
+	id: string;
+	username: string;
+}
+
+interface TwitterState {
+	code_challenge: string;
+	state: string;
+}
+
+interface TwitterAccount {
+	id: string;
+	username: string;
+}
+
+const SESSION_KEY_GITHUB = '_github';
+
+const SESSION_KEY_GITHUB_STATE = '_github_state';
+
+const SESSION_KEY_TWITTER = '_twitter';
+
+const SESSION_KEY_TWITTER_STATE = '_twitter_state';
+
+export const routeRoot: RouteAction = async (c) => {
 	return c.json({ message: 'Hello World!' });
 };
 
-export const routeDebugMinter: RouteFn = async (c) => {
+export const routeDebugMinter: RouteAction = async (c) => {
 	const endpoint = RPC_ENDPOINTS['gnosis'] ?? raise500('missing gnosis endpoint');
 	const web3 = new Web3(endpoint);
 	const wallet = web3.eth.accounts.wallet.add(c.env.MINTER_PRIVATE_KEY);
@@ -38,7 +69,7 @@ export const routeDebugMinter: RouteFn = async (c) => {
 	});
 };
 
-export const routeDebugBindings: RouteFn = async (c) => {
+export const routeDebugBindings: RouteAction = async (c) => {
 	const bindings: Record<string, any> = {};
 
 	for (const key of ENVIRONMENT_KEYS) {
@@ -66,16 +97,7 @@ export const routeDebugBindings: RouteFn = async (c) => {
 	});
 };
 
-const SESSION_KEY_GITHUB = '_github';
-
-const SESSION_KEY_GITHUB_STATE = '_github_state';
-
-interface GitHubAccount {
-	id: string;
-	username: string;
-}
-
-export const routeAccountGitHub: RouteFn = async (c) => {
+export const routeAccountGitHub: RouteAction = async (c) => {
 	const account = await sessionLoad<GitHubAccount>(c, SESSION_KEY_GITHUB);
 	return c.json(
 		account ?? {
@@ -85,32 +107,7 @@ export const routeAccountGitHub: RouteFn = async (c) => {
 	);
 };
 
-const SESSION_KEY_TWITTER_STATE = '_twitter_state';
-
-interface TwitterState {
-	code_challenge: string;
-	state: string;
-}
-
-export const routeAccountTwitterAuthorizeURL: RouteFn = async (c) => {
-	const website = WEBSITES.find((w) => w.host === c.req.query('host')) ?? raise400('invalid host');
-	const client_id = (c.env[website.keys.TWITTER_CLIENT_ID] as string) ?? raise500('missing TWITTER_CLIENT_ID');
-	const state = randomHex(16);
-	const code_challenge = randomHex(16);
-
-	const url = twitterCreateAuthorizeURL({
-		client_id,
-		redirect_uri: `${website.url}/oauth/twitter/callback`,
-		scope: ['tweet.read', 'users.read', 'follows.read'],
-		state,
-		code_challenge,
-	});
-
-	await sessionSave(c, SESSION_KEY_TWITTER_STATE, { code_challenge, state }, 600);
-	return c.json({ url });
-};
-
-export const routeAccountGitHubAuthorizeURL: RouteFn = async (c) => {
+export const routeAccountGitHubAuthorizeURL: RouteAction = async (c) => {
 	const website = WEBSITES.find((w) => w.host === c.req.query('host')) ?? raise400('invalid host');
 
 	const client_id = (c.env[website.keys.GITHUB_CLIENT_ID] as string) ?? raise500('missing GITHUB_CLIENT_ID');
@@ -128,12 +125,12 @@ export const routeAccountGitHubAuthorizeURL: RouteFn = async (c) => {
 	return c.json({ url });
 };
 
-export const routeAccountGitHubSignOut: RouteFn = async (c) => {
+export const routeAccountGitHubSignOut: RouteAction = async (c) => {
 	sessionClear(c, SESSION_KEY_GITHUB);
 	return c.json({ success: true });
 };
 
-export const routeAccountGitHubSignIn: RouteFn = async (c) => {
+export const routeAccountGitHubSignIn: RouteAction = async (c) => {
 	const data = (await c.req.json()) ?? {};
 
 	const website = WEBSITES.find((w) => w.host === data.host) ?? raise400('invalid host');
@@ -145,10 +142,9 @@ export const routeAccountGitHubSignIn: RouteFn = async (c) => {
 	const code = data.code ?? raise400('missing code');
 	const redirect_uri = data.redirect_uri ?? raise400('missing redirect_uri');
 
-	const { state: sessionState }: { state: string } =
-		(await sessionLoad<{ state: string }>(c, SESSION_KEY_GITHUB_STATE)) ?? raise400('missing session state');
+	const ss = (await sessionLoad<GitHubState>(c, SESSION_KEY_GITHUB_STATE)) ?? raise400('missing session state');
 
-	if (state !== sessionState) {
+	if (state !== ss.state) {
 		return raise400('invalid state');
 	}
 
@@ -174,19 +170,104 @@ export const routeAccountGitHubSignIn: RouteFn = async (c) => {
 	return c.json({ success: true });
 };
 
+export const routeAccountTwitter: RouteAction = async (c) => {
+	const account = await sessionLoad<TwitterAccount>(c, SESSION_KEY_TWITTER);
+	return c.json(
+		account ?? {
+			id: '',
+			username: '',
+		},
+	);
+};
+
+export const routeAccountTwitterAuthorizeURL: RouteAction = async (c) => {
+	const website = WEBSITES.find((w) => w.host === c.req.query('host')) ?? raise400('invalid host');
+	const client_id = (c.env[website.keys.TWITTER_CLIENT_ID] as string) ?? raise500('missing TWITTER_CLIENT_ID');
+	const state = randomHex(16);
+	const code_challenge = randomHex(16);
+
+	const url = twitterCreateAuthorizeURL({
+		client_id,
+		redirect_uri: `${website.url}/oauth/twitter/callback`,
+		scope: ['tweet.read', 'users.read', 'follows.read'],
+		state,
+		code_challenge,
+	});
+
+	await sessionSave(c, SESSION_KEY_TWITTER_STATE, { code_challenge, state }, 600);
+	return c.json({ url });
+};
+
+export const routeAccountTwitterSignIn: RouteAction = async (c) => {
+	const data = (await c.req.json()) ?? {};
+
+	// data.host, data.state, data.code, data.redirect_uri
+
+	const website = WEBSITES.find((w) => w.host === data.host) ?? raise400('invalid host');
+	const client_id = (c.env[website.keys.TWITTER_CLIENT_ID] as string) ?? raise500('missing TWITTER_CLIENT_ID');
+	const client_secret = (c.env[website.keys.TWITTER_CLIENT_SECRET] as string) ?? raise500('missing TWITTER_CLIENT_SECRET');
+
+	const ss = (await sessionLoad<TwitterState>(c, SESSION_KEY_TWITTER_STATE)) ?? raise400('missing session state');
+
+	if (ss.state !== data.state) {
+		return raise400('invalid state');
+	}
+
+	if (!ss.code_challenge) {
+		return raise400('missing code_challenge');
+	}
+
+	const access_token = await twitterCreateAccessToken({
+		client_id,
+		client_secret,
+		redirect_uri: data.redirect_uri,
+		code: data.code,
+		code_verifier: ss.code_challenge,
+	});
+
+	const user = await twitterGetUser(access_token);
+
+	sessionSave(c, SESSION_KEY_TWITTER, { id: user.id, username: user.username });
+
+	const is_following = await twitterCheckIsFollowing(access_token, OWNER_TWITTER_USERNAME);
+
+	if (is_following) {
+		const nft_id = `twitter_follower_${new Date().getFullYear()}`;
+
+		await airdropMarkEligible(useDatabase(c), nft_id, twitterCreateUserID(user.id));
+	}
+
+	return c.json({ success: true });
+};
+
+export const routeAccountTwitterSignOut: RouteAction = async (c) => {
+	sessionClear(c, SESSION_KEY_TWITTER);
+	return c.json({ success: true });
+};
+
 async function collectSignedUserIds(c: Context<{ Bindings: Environment }>) {
 	const userIds: string[] = [];
 
 	// load github user id
-	const account = await sessionLoad<GitHubAccount>(c, SESSION_KEY_GITHUB);
-	if (account) {
-		userIds.push(githubCreateUserID(account.id));
+	{
+		const account = await sessionLoad<GitHubAccount>(c, SESSION_KEY_GITHUB);
+		if (account && account.id) {
+			userIds.push(githubCreateUserID(account.id));
+		}
+	}
+
+	// load twitter user id
+	{
+		const account = await sessionLoad<TwitterAccount>(c, SESSION_KEY_TWITTER);
+		if (account && account.id) {
+			userIds.push(twitterCreateUserID(account.id));
+		}
 	}
 
 	return userIds;
 }
 
-export const routeAirdropClaim: RouteFn = async (c) => {
+export const routeAirdropClaim: RouteAction = async (c) => {
 	const { nft_id, address } = (await c.req.json()) as { nft_id: string; address: string };
 	if (typeof nft_id !== 'string' || !nft_id) {
 		raise400('invalid nft_id');
@@ -227,7 +308,7 @@ export const routeAirdropClaim: RouteFn = async (c) => {
 	return c.json({ success: true });
 };
 
-export const routeAirdropList: RouteFn = async (c) => {
+export const routeAirdropList: RouteAction = async (c) => {
 	const userIds = await collectSignedUserIds(c);
 
 	const db = useDatabase(c);

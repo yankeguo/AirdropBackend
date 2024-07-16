@@ -109,7 +109,7 @@ export async function sessionLoad<T>(c: Context<{ Bindings: Environment }>, name
 	return value;
 }
 
-export const GITHUB_CLIENT_USER_AGENT = 'yankeguo/airdrop-backend';
+export const CLIENT_USER_AGENT = 'yankeguo/airdrop-backend';
 
 export function githubCreateAuthorizeURL({
 	redirect_uri,
@@ -144,7 +144,7 @@ export async function githubCreateAccessToken({
 		headers: {
 			'Content-Type': 'application/json',
 			Accept: 'application/json',
-			'User-Agent': GITHUB_CLIENT_USER_AGENT,
+			'User-Agent': CLIENT_USER_AGENT,
 		},
 		body: JSON.stringify({
 			client_id,
@@ -171,7 +171,7 @@ export async function githubGetUser(access_token: string): Promise<{ id: number;
 	const res = await fetch('https://api.github.com/user', {
 		headers: {
 			Accept: 'application/json',
-			'User-Agent': GITHUB_CLIENT_USER_AGENT,
+			'User-Agent': CLIENT_USER_AGENT,
 			Authorization: `Bearer ${access_token}`,
 		},
 	});
@@ -194,7 +194,7 @@ export async function githubGetUser(access_token: string): Promise<{ id: number;
 export async function githubCheckIsFollowing(access_token: string, username: string): Promise<boolean> {
 	const res = await fetch(`https://api.github.com/user/following/${username}`, {
 		headers: {
-			'User-Agent': GITHUB_CLIENT_USER_AGENT,
+			'User-Agent': CLIENT_USER_AGENT,
 			Authorization: `Bearer ${access_token}`,
 		},
 	});
@@ -206,6 +206,10 @@ export async function githubCheckIsFollowing(access_token: string, username: str
 
 export function githubCreateUserID(id: number | string): string {
 	return `github::${id}`;
+}
+
+export function twitterCreateUserID(id: string): string {
+	return `twitter::${id}`;
 }
 
 export function twitterCreateAuthorizeURL({
@@ -230,4 +234,127 @@ export function twitterCreateAuthorizeURL({
 	u.searchParams.set('code_challenge', code_challenge);
 	u.searchParams.set('code_challenge_method', 'plain');
 	return u.toString();
+}
+
+export async function twitterCreateAccessToken({
+	code,
+	client_id,
+	client_secret,
+	redirect_uri,
+	code_verifier,
+}: {
+	code: string;
+	client_id: string;
+	client_secret: string;
+	redirect_uri: string;
+	code_verifier: string;
+}) {
+	const form = new URLSearchParams();
+
+	form.set('code', code);
+	form.set('redirect_uri', redirect_uri);
+	form.set('grant_type', 'authorization_code');
+	form.set('code_verifier', code_verifier);
+
+	const res = await fetch('https://api.twitter.com/2/oauth2/token', {
+		method: 'POST',
+		headers: {
+			Authorization: `Basic ${btoa(`${client_id}:${client_secret}`)}`,
+			'User-Agent': CLIENT_USER_AGENT,
+			'Content-Type': 'application/x-www-form-urlencoded',
+		},
+		body: form.toString(),
+	});
+
+	if (res.status !== 200) {
+		return raise500(await res.text());
+	}
+
+	const data = (await res.json()) as any;
+
+	if (!data) {
+		return raise500('twitter/create_access_token: invalid response data');
+	}
+
+	if (typeof data.access_token !== 'string') {
+		return raise500('twitter/create_access_token: invalid response access_token');
+	}
+
+	return data.access_token as string;
+}
+
+export async function twitterGetUser(access_token: string) {
+	const url = new URL('https://api.twitter.com/2/users/me');
+	url.searchParams.set('user.fields', 'id,username');
+
+	const res = await fetch(url.toString(), {
+		headers: {
+			Authorization: `Bearer ${access_token}`,
+			'User-Agent': CLIENT_USER_AGENT,
+		},
+	});
+
+	if (res.status !== 200) {
+		return raise500(await res.text());
+	}
+
+	const data = (await res.json()) as any;
+
+	if (!data) {
+		return raise500('twitter/get_user: invalid response data');
+	}
+
+	if (typeof data.data !== 'object') {
+		return raise500('twitter/get_user: invalid response data.data');
+	}
+
+	if (typeof data.data.id !== 'string') {
+		return raise500('twitter/get_user: invalid response data.data.id');
+	}
+
+	if (typeof data.data.username !== 'string') {
+		return raise500('twitter/get_user: invalid response data.data.username');
+	}
+
+	return { id: data.data.id as string, username: data.data.username as string };
+}
+
+export async function twitterCheckIsFollowing(access_token: string, username: string): Promise<boolean> {
+	const url = new URL('https://api.twitter.com/2/users/by/username/' + username);
+	url.searchParams.set('user.fields', 'id,connection_status');
+
+	const res = await fetch(url.toString(), {
+		headers: {
+			Authorization: `Bearer ${access_token}`,
+			'User-Agent': CLIENT_USER_AGENT,
+		},
+	});
+
+	if (res.status !== 200) {
+		return raise500(await res.text());
+	}
+
+	const data = (await res.json()) as any;
+
+	if (!data) {
+		return raise500('twitter/check_is_following: invalid response data');
+	}
+
+	if (typeof data.data !== 'object') {
+		return raise500('twitter/check_is_following: invalid response data.data');
+	}
+
+	if (typeof data.data.id !== 'string') {
+		return raise500('twitter/check_is_following: invalid response data.data.id');
+	}
+
+	if (typeof data.data.connection_status !== 'object') {
+		return raise500('twitter/check_is_following: invalid response data.data.connection_status');
+	}
+
+	if (!Array.isArray(data.data.connection_status)) {
+		return raise500('twitter/check_is_following: invalid response data.data.connection_status not array');
+	}
+
+	return data.data.connection_status.includes('following');
 }

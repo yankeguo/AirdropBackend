@@ -82,6 +82,8 @@ export const WEBSITES: Website[] = [
 
 export const OWNER_GITHUB_USERNAME = 'yankeguo';
 
+export const OWNER_TWITTER_USERNAME = 'yankeguo';
+
 export interface NFT {
 	// id, a meaningful string (off-chain)
 	id: string;
