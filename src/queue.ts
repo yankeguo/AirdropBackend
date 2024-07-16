@@ -1,6 +1,6 @@
 import { Web3 } from 'web3';
-import { Environment, NFTS, QUEUE_NAME_AIRDROP_MINT, RPC_ENDPOINTS } from './config';
-import { createDatabase } from './utility';
+import { Environment, NFTS, QUEUE_NAME_AIRDROP_MINT } from './config';
+import { createDatabase, rpcEndpointFromEnv } from './utility';
 import { YGTOG } from '@yankeguo/ygtog';
 import { tAirdrops } from './schema';
 import { eq } from 'drizzle-orm';
@@ -37,7 +37,7 @@ async function _queueAirdropMint(env: Environment, ctx: ExecutionContext, args: 
 		return;
 	}
 
-	const endpoint = RPC_ENDPOINTS[nft.chain];
+	const endpoint = rpcEndpointFromEnv(env, nft.chain);
 
 	if (!endpoint) {
 		console.log('RPC endpoint not found', nft.chain);

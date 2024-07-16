@@ -15,13 +15,13 @@ export type Environment = {
 
 	MINTER_PRIVATE_KEY: string;
 
+	RPC_ENDPOINT_GNOSIS: string;
+
 	DB_AIRDROP: D1Database;
 	QUEUE_AIRDROP_MINT: Queue<{ airdrop_id: string }>;
 };
 
-type EnvironmentKey = keyof Environment;
-
-export const ENVIRONMENT_KEYS: EnvironmentKey[] = [
+export const ENVIRONMENT_KEYS: (keyof Environment)[] = [
 	'SECRET_KEY',
 	'GITHUB_DEV_CLIENT_ID',
 	'GITHUB_DEV_CLIENT_SECRET',
@@ -34,16 +34,17 @@ export const ENVIRONMENT_KEYS: EnvironmentKey[] = [
 	'DB_AIRDROP',
 	'MINTER_PRIVATE_KEY',
 	'QUEUE_AIRDROP_MINT',
+	'RPC_ENDPOINT_GNOSIS',
 ];
 
 export interface Website {
 	url: string;
 	host: string;
 	keys: {
-		GITHUB_CLIENT_ID: EnvironmentKey;
-		GITHUB_CLIENT_SECRET: EnvironmentKey;
-		TWITTER_CLIENT_ID: EnvironmentKey;
-		TWITTER_CLIENT_SECRET: EnvironmentKey;
+		GITHUB_CLIENT_ID: keyof Environment;
+		GITHUB_CLIENT_SECRET: keyof Environment;
+		TWITTER_CLIENT_ID: keyof Environment;
+		TWITTER_CLIENT_SECRET: keyof Environment;
 	};
 }
 
@@ -118,9 +119,5 @@ export const NFTS: NFT[] = YGTOG.items.map((item) => {
 		image: item.metadata.image,
 	};
 });
-
-export const RPC_ENDPOINTS: Record<string, string> = {
-	gnosis: 'https://rpc.gnosischain.com',
-};
 
 export const QUEUE_NAME_AIRDROP_MINT = 'airdrop-mint';

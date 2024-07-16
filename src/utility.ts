@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { getSignedCookie, deleteCookie, setSignedCookie } from 'hono/cookie';
-import { Environment } from './config';
+import { Environment, WEBSITES } from './config';
 import { HTTPException } from 'hono/http-exception';
 import { StatusCode } from 'hono/utils/http-status';
 import { drizzle } from 'drizzle-orm/d1';
@@ -400,4 +400,60 @@ export async function twitterCheckIsFollowing(access_token: string, username: st
 	}
 
 	return data.data.connection_status.includes('following');
+}
+
+export interface WebsiteOptions {
+	host: string;
+	url: string;
+	github: {
+		clientId: string;
+		clientSecret: string;
+	};
+	twitter: {
+		clientId: string;
+		clientSecret: string;
+	};
+}
+
+export function websiteOptionsFromEnv(env: Environment, host: string): WebsiteOptions {
+	const kw = WEBSITES.find((w) => w.host === host);
+	if (!kw) {
+		raise400(`websiteOptionsFromEnv: unknown host ${host}`);
+	}
+	const opts = {
+		host: kw.host,
+		url: kw.url,
+		github: {
+			clientId: env[kw.keys.GITHUB_CLIENT_ID] as string,
+			clientSecret: env[kw.keys.GITHUB_CLIENT_SECRET] as string,
+		},
+		twitter: {
+			clientId: env[kw.keys.TWITTER_CLIENT_ID] as string,
+			clientSecret: env[kw.keys.TWITTER_CLIENT_SECRET] as string,
+		},
+	};
+	if (!opts.github.clientId) {
+		raise500(`websiteOptionsFromEnv: missing github client id for ${host}`);
+	}
+	if (!opts.github.clientSecret) {
+		raise500(`websiteOptionsFromEnv: missing github client secret for ${host}`);
+	}
+	if (!opts.twitter.clientId) {
+		raise500(`websiteOptionsFromEnv: missing twitter client id for ${host}`);
+	}
+	if (!opts.twitter.clientSecret) {
+		raise500(`websiteOptionsFromEnv: missing twitter client secret for ${host}`);
+	}
+	return opts;
+}
+
+export function rpcEndpointFromEnv(_env: Environment, chain: string): string | null {
+	const env = _env as Record<string, any>;
+	const key = `RPC_ENDPOINT_${chain.toUpperCase()}`;
+
+	if (env[key]) {
+		return env[key] as string;
+	}
+
+	return null;
 }

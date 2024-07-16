@@ -1,6 +1,6 @@
 import { Web3 } from 'web3';
 import { isAddress as isEthereumAddress } from 'web3-validator';
-import { Environment, ENVIRONMENT_KEYS, NFTS, OWNER_GITHUB_USERNAME, OWNER_TWITTER_USERNAME, RPC_ENDPOINTS, WEBSITES } from './config';
+import { Environment, ENVIRONMENT_KEYS, NFTS, OWNER_GITHUB_USERNAME } from './config';
 import { Context } from 'hono';
 import { eq } from 'drizzle-orm';
 import { tAirdrops } from './schema';
@@ -21,9 +21,9 @@ import {
 	twitterCreateAuthorizeURL,
 	twitterCreateAccessToken,
 	twitterGetUser,
-	twitterCheckIsFollowing,
 	twitterCreateUserID,
-	twitterCheckIsFollowingLegacy,
+	rpcEndpointFromEnv,
+	websiteOptionsFromEnv,
 } from './utility';
 
 type RouteAction = (c: Context<{ Bindings: Environment }>) => Promise<Response>;
@@ -60,7 +60,7 @@ export const routeRoot: RouteAction = async (c) => {
 };
 
 export const routeDebugMinter: RouteAction = async (c) => {
-	const endpoint = RPC_ENDPOINTS['gnosis'] ?? raise500('missing gnosis endpoint');
+	const endpoint = rpcEndpointFromEnv(c.env, 'gnosis') ?? raise500('missing RPC_ENDPOINT_GNOSIS');
 	const web3 = new Web3(endpoint);
 	const wallet = web3.eth.accounts.wallet.add(c.env.MINTER_PRIVATE_KEY);
 	const address = wallet.at(0)?.address;
@@ -109,14 +109,13 @@ export const routeAccountGitHub: RouteAction = async (c) => {
 };
 
 export const routeAccountGitHubAuthorizeURL: RouteAction = async (c) => {
-	const website = WEBSITES.find((w) => w.host === c.req.query('host')) ?? raise400('invalid host');
+	const website = websiteOptionsFromEnv(c.env, c.req.query('host') ?? 'none');
 
-	const client_id = (c.env[website.keys.GITHUB_CLIENT_ID] as string) ?? raise500('missing GITHUB_CLIENT_ID');
 	const redirect_uri = `${website.url}/oauth/github/callback`;
 	const state = randomHex(8);
 
 	const url = githubCreateAuthorizeURL({
-		client_id,
+		client_id: website.github.clientId,
 		redirect_uri,
 		state,
 	});
@@ -134,10 +133,7 @@ export const routeAccountGitHubSignOut: RouteAction = async (c) => {
 export const routeAccountGitHubSignIn: RouteAction = async (c) => {
 	const data = (await c.req.json()) ?? {};
 
-	const website = WEBSITES.find((w) => w.host === data.host) ?? raise400('invalid host');
-
-	const client_id = (c.env[website.keys.GITHUB_CLIENT_ID] as string) ?? raise500('missing GITHUB_CLIENT_ID');
-	const client_secret = (c.env[website.keys.GITHUB_CLIENT_SECRET] as string) ?? raise500('missing GITHUB_CLIENT_SECRET');
+	const website = websiteOptionsFromEnv(c.env, data.host ?? 'none');
 
 	const state = data.state ?? raise400('missing state');
 	const code = data.code ?? raise400('missing code');
@@ -150,8 +146,8 @@ export const routeAccountGitHubSignIn: RouteAction = async (c) => {
 	}
 
 	const access_token = await githubCreateAccessToken({
-		client_id,
-		client_secret,
+		client_id: website.github.clientId,
+		client_secret: website.github.clientSecret,
 		code,
 		redirect_uri,
 	});
@@ -182,13 +178,12 @@ export const routeAccountTwitter: RouteAction = async (c) => {
 };
 
 export const routeAccountTwitterAuthorizeURL: RouteAction = async (c) => {
-	const website = WEBSITES.find((w) => w.host === c.req.query('host')) ?? raise400('invalid host');
-	const client_id = (c.env[website.keys.TWITTER_CLIENT_ID] as string) ?? raise500('missing TWITTER_CLIENT_ID');
+	const website = websiteOptionsFromEnv(c.env, c.req.query('host') ?? 'none');
 	const state = randomHex(16);
 	const code_challenge = randomHex(16);
 
 	const url = twitterCreateAuthorizeURL({
-		client_id,
+		client_id: website.twitter.clientId,
 		redirect_uri: `${website.url}/oauth/twitter/callback`,
 		scope: ['tweet.read', 'users.read', 'follows.read'],
 		state,
@@ -204,9 +199,7 @@ export const routeAccountTwitterSignIn: RouteAction = async (c) => {
 
 	// data.host, data.state, data.code, data.redirect_uri
 
-	const website = WEBSITES.find((w) => w.host === data.host) ?? raise400('invalid host');
-	const client_id = (c.env[website.keys.TWITTER_CLIENT_ID] as string) ?? raise500('missing TWITTER_CLIENT_ID');
-	const client_secret = (c.env[website.keys.TWITTER_CLIENT_SECRET] as string) ?? raise500('missing TWITTER_CLIENT_SECRET');
+	const website = websiteOptionsFromEnv(c.env, data.host ?? 'none');
 
 	const ss = (await sessionLoad<TwitterState>(c, SESSION_KEY_TWITTER_STATE)) ?? raise400('missing session state');
 
@@ -219,8 +212,8 @@ export const routeAccountTwitterSignIn: RouteAction = async (c) => {
 	}
 
 	const access_token = await twitterCreateAccessToken({
-		client_id,
-		client_secret,
+		client_id: website.twitter.clientId,
+		client_secret: website.twitter.clientSecret,
 		redirect_uri: data.redirect_uri,
 		code: data.code,
 		code_verifier: ss.code_challenge,
