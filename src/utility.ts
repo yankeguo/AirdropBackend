@@ -1,32 +1,14 @@
-import { Context } from 'hono';
-import { getSignedCookie, deleteCookie, setSignedCookie } from 'hono/cookie';
-import { Environment, WEBSITES } from './config';
+import { AirdropDrizzleDatabase, Bindings, WEBSITES } from './types';
 import { HTTPException } from 'hono/http-exception';
 import { StatusCode } from 'hono/utils/http-status';
 import { drizzle } from 'drizzle-orm/d1';
 import { tAirdrops } from './schema';
-import { CookieOptions } from 'hono/utils/cookie';
-
-export const DEFAULT_SESSION_MAX_AGE = 3600 * 24 * 3;
-
-export const DEFAULT_COOKIE_OPTIONS: CookieOptions = {
-	path: '/',
-	maxAge: DEFAULT_SESSION_MAX_AGE,
-	httpOnly: true,
-	secure: true,
-	partitioned: true,
-	sameSite: 'None',
-};
-
-export function useDatabase(c: Context<{ Bindings: Environment }>) {
-	return createDatabase(c.env.DB_AIRDROP);
-}
 
 export function createDatabase(db: D1Database) {
 	return drizzle(db, { schema: { tAirdrops } });
 }
 
-export async function airdropMarkEligible(db: ReturnType<typeof useDatabase>, nftId: string, userId: string) {
+export async function airdropMarkEligible(db: AirdropDrizzleDatabase, nftId: string, userId: string) {
 	const id = `${nftId}::${userId}`;
 
 	await db
@@ -59,54 +41,6 @@ export function raise400(message: string): never {
 
 export function raise500(message: string): never {
 	throw new HTTPException(500, { message });
-}
-
-function _sessionEncode(value: object, maxAge: number): string {
-	const exp = Math.floor(Date.now() / 1000 + maxAge);
-	return `${exp}:${JSON.stringify(value)}`;
-}
-
-function _sessionDecode<T>(raw: string): T | null {
-	const idx = raw.indexOf(':');
-	if (idx === -1) {
-		return null;
-	}
-	const exp = parseInt(raw.slice(0, idx)) ?? 0;
-	if (exp < Date.now() / 1000) {
-		return null;
-	}
-	try {
-		const value = JSON.parse(raw.slice(idx + 1));
-		// must be an plain object
-		if (value?.constructor !== Object) {
-			return null;
-		}
-		return value as T;
-	} catch (e) {
-		return null;
-	}
-}
-
-export function sessionClear(c: Context<{ Bindings: Environment }>, name: string) {
-	deleteCookie(c, name, DEFAULT_COOKIE_OPTIONS);
-}
-
-export async function sessionSave(c: Context<{ Bindings: Environment }>, name: string, value: any, maxAge?: number) {
-	maxAge = maxAge ?? DEFAULT_SESSION_MAX_AGE;
-	await setSignedCookie(c, name, _sessionEncode(value, maxAge), c.env.SECRET_KEY, { ...DEFAULT_COOKIE_OPTIONS, maxAge });
-}
-
-export async function sessionLoad<T>(c: Context<{ Bindings: Environment }>, name: string): Promise<T | null> {
-	const raw = await getSignedCookie(c, c.env.SECRET_KEY, name);
-	if (!raw) {
-		return null;
-	}
-	const value = _sessionDecode<T>(raw);
-	if (!value) {
-		sessionClear(c, name);
-		return null;
-	}
-	return value;
 }
 
 export const CLIENT_USER_AGENT = 'yankeguo/airdrop-backend';
@@ -415,7 +349,7 @@ export interface WebsiteOptions {
 	};
 }
 
-export function websiteOptionsFromEnv(env: Environment, host: string): WebsiteOptions {
+export function websiteOptionsFromEnv(env: Bindings, host: string): WebsiteOptions {
 	const kw = WEBSITES.find((w) => w.host === host);
 	if (!kw) {
 		raise400(`websiteOptionsFromEnv: unknown host ${host}`);
@@ -447,7 +381,7 @@ export function websiteOptionsFromEnv(env: Environment, host: string): WebsiteOp
 	return opts;
 }
 
-export function rpcEndpointFromEnv(_env: Environment, chain: string): string | null {
+export function rpcEndpointFromEnv(_env: Bindings, chain: string): string | null {
 	const env = _env as Record<string, any>;
 	const key = `RPC_ENDPOINT_${chain.toUpperCase()}`;
 

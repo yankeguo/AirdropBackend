@@ -1,13 +1,13 @@
-import { Environment } from './config';
+import { Bindings } from './types';
 import { app } from './fetch';
 import { QUEUES } from './queue';
 
 export default {
 	fetch: app.fetch,
 
-	scheduled(event: ScheduledEvent, env: Environment, ctx: ExecutionContext) {},
+	scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {},
 
-	async queue(batch: MessageBatch, env: Environment, ctx: ExecutionContext): Promise<void> {
+	async queue(batch: MessageBatch, env: Bindings, ctx: ExecutionContext): Promise<void> {
 		const fn = QUEUES[batch.queue];
 
 		if (!fn) {

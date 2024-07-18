@@ -1,6 +1,21 @@
 import { YGTOG } from '@yankeguo/ygtog';
+import { DrizzleD1Database } from 'drizzle-orm/d1';
+import { tAirdrops } from './schema';
+import { Context, Input } from 'hono';
+import { CookieOptions } from 'hono/utils/cookie';
 
-export type Environment = {
+export const DEFAULT_COOKIE_OPTIONS: CookieOptions = {
+	path: '/',
+	maxAge: 3600 * 24 * 3,
+	httpOnly: true,
+	secure: true,
+	partitioned: true,
+	sameSite: 'None',
+};
+
+export type AirdropDrizzleDatabase = DrizzleD1Database<{ tAirdrops: typeof tAirdrops }>;
+
+export type Bindings = {
 	DEBUG_KEY: string;
 
 	SECRET_KEY: string;
@@ -23,7 +38,7 @@ export type Environment = {
 	QUEUE_AIRDROP_MINT: Queue<{ airdrop_id: string }>;
 };
 
-export const ENVIRONMENT_KEYS: (keyof Environment)[] = [
+export const BINDINGS_KEYS: (keyof Bindings)[] = [
 	'DEBUG_KEY',
 	'SECRET_KEY',
 	'GITHUB_DEV_CLIENT_ID',
@@ -40,14 +55,40 @@ export const ENVIRONMENT_KEYS: (keyof Environment)[] = [
 	'RPC_ENDPOINT_GNOSIS',
 ];
 
+export type Session = {
+	now?: number;
+	github?: {
+		id?: string;
+		username?: string;
+	};
+	github_state?: string;
+	twitter?: {
+		id?: string;
+		username?: string;
+	};
+	twitter_state?: {
+		code_challenge?: string;
+		state?: string;
+	};
+};
+
+export type Variables = {
+	db: AirdropDrizzleDatabase;
+	session: Session;
+};
+
+export type AirdropHonoContext<P extends string = any, I extends Input = {}> = Context<{ Bindings: Bindings; Variables: Variables }, P, I>;
+
+export type AirdropHonoRoute = (c: AirdropHonoContext) => Promise<Response>;
+
 export interface Website {
 	url: string;
 	host: string;
 	keys: {
-		GITHUB_CLIENT_ID: keyof Environment;
-		GITHUB_CLIENT_SECRET: keyof Environment;
-		TWITTER_CLIENT_ID: keyof Environment;
-		TWITTER_CLIENT_SECRET: keyof Environment;
+		GITHUB_CLIENT_ID: keyof Bindings;
+		GITHUB_CLIENT_SECRET: keyof Bindings;
+		TWITTER_CLIENT_ID: keyof Bindings;
+		TWITTER_CLIENT_SECRET: keyof Bindings;
 	};
 }
 
@@ -109,18 +150,20 @@ export interface NFT {
 	image: string;
 }
 
-export const NFTS: NFT[] = YGTOG.items.map((item) => {
-	return {
-		id: item.key,
-		chain: YGTOG.contract.chain,
-		standard: YGTOG.contract.standard,
-		contract: YGTOG.contract.address,
-		token: item.id.toString(),
-		name: item.metadata.name,
-		description: item.metadata.description,
-		helper: item.helper,
-		image: item.metadata.image,
-	};
-});
+export const NFTS: NFT[] = YGTOG.items
+	.filter((item) => !item.hidden)
+	.map((item) => {
+		return {
+			id: item.key,
+			chain: YGTOG.contract.chain,
+			standard: YGTOG.contract.standard,
+			contract: YGTOG.contract.address,
+			token: item.id.toString(),
+			name: item.metadata.name,
+			description: item.metadata.description,
+			helper: item.helper,
+			image: item.metadata.image,
+		};
+	});
 
 export const QUEUE_NAME_AIRDROP_MINT = 'airdrop-mint';

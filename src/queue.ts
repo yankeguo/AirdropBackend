@@ -1,11 +1,11 @@
 import { Web3 } from 'web3';
-import { Environment, NFTS, QUEUE_NAME_AIRDROP_MINT } from './config';
+import { Bindings, NFTS, QUEUE_NAME_AIRDROP_MINT } from './types';
 import { createDatabase, rpcEndpointFromEnv } from './utility';
 import { YGTOG } from '@yankeguo/ygtog';
 import { tAirdrops } from './schema';
 import { eq } from 'drizzle-orm';
 
-async function _queueAirdropMint(env: Environment, ctx: ExecutionContext, args: { airdrop_id: string }): Promise<void> {
+async function _queueAirdropMint(env: Bindings, ctx: ExecutionContext, args: { airdrop_id: string }): Promise<void> {
 	const db = createDatabase(env.DB_AIRDROP);
 
 	const record = await db.query.tAirdrops.findFirst({ where: eq(tAirdrops.id, args.airdrop_id) });
@@ -66,6 +66,6 @@ async function _queueAirdropMint(env: Environment, ctx: ExecutionContext, args: 
 	return;
 }
 
-export const QUEUES: Record<string, (env: Environment, ctx: ExecutionContext, args: any) => Promise<void>> = {
+export const QUEUES: Record<string, (env: Bindings, ctx: ExecutionContext, args: any) => Promise<void>> = {
 	[QUEUE_NAME_AIRDROP_MINT]: _queueAirdropMint,
 };

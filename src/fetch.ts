@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { Environment, WEBSITES } from './config';
+import { Bindings, Session, Variables, WEBSITES, DEFAULT_COOKIE_OPTIONS } from './types';
 import { HTTPException } from 'hono/http-exception';
 import {
 	routeAccountGitHub,
@@ -15,10 +15,14 @@ import {
 	routeAirdropList,
 	routeDebugBindings,
 	routeDebugMinter,
+	routeDebugSession,
 	routeRoot,
 } from './routes';
+import { createDatabase } from './utility';
+import { EncryptedSession } from '@yankeguo/hono-cookie-session';
+import { deleteCookie } from 'hono/cookie';
 
-export const app = new Hono<{ Bindings: Environment }>();
+export const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use(
 	cors({
@@ -27,6 +31,21 @@ app.use(
 		credentials: true,
 	}),
 );
+
+app.use(async (c, next) => {
+	const db = createDatabase(c.env.DB_AIRDROP);
+	const es = new EncryptedSession<Session>(c, c.env.SECRET_KEY, '_session', DEFAULT_COOKIE_OPTIONS);
+
+	c.set('db', db);
+	c.set('session', (await es.get()) ?? {});
+
+	deleteCookie(c, '_github');
+	deleteCookie(c, '_twitter');
+
+	await next();
+
+	await es.set(c.get('session') ?? {});
+});
 
 app.onError((e, c) => {
 	if (e instanceof HTTPException) {
@@ -42,6 +61,7 @@ app.onError((e, c) => {
 });
 
 app.get('/', routeRoot);
+app.get('/debug/session', routeDebugSession);
 app.get('/debug/minter', routeDebugMinter);
 app.get('/debug/bindings', routeDebugBindings);
 app.get('/account/twitter', routeAccountTwitter);
