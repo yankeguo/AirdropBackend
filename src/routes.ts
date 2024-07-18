@@ -21,50 +21,15 @@ import {
 	websiteOptionsFromEnv,
 } from './utility';
 
-interface GitHubState {
-	state: string;
-}
-
-interface GitHubAccount {
-	id: string;
-	username: string;
-}
-
-interface TwitterState {
-	code_challenge: string;
-	state: string;
-}
-
-interface TwitterAccount {
-	id: string;
-	username: string;
-}
-
-const SESSION_KEY_GITHUB = '_github';
-
-const SESSION_KEY_GITHUB_STATE = '_github_state';
-
-const SESSION_KEY_TWITTER = '_twitter';
-
-const SESSION_KEY_TWITTER_STATE = '_twitter_state';
-
 export const routeRoot: AirdropHonoRoute = async (c) => {
 	return c.json({ message: 'Hello World!' });
 };
 
 export const routeDebugSession: AirdropHonoRoute = async (c) => {
-	if (c.env.DEBUG_KEY !== c.req.query('key')) {
-		return raise400('invalid key');
-	}
-
 	return c.json(c.get('session'));
 };
 
 export const routeDebugMinter: AirdropHonoRoute = async (c) => {
-	if (c.env.DEBUG_KEY !== c.req.query('key')) {
-		return raise400('invalid key');
-	}
-
 	const endpoint = rpcEndpointFromEnv(c.env, 'gnosis') ?? raise500('missing RPC_ENDPOINT_GNOSIS');
 	const web3 = new Web3(endpoint);
 	const wallet = web3.eth.accounts.wallet.add(c.env.MINTER_PRIVATE_KEY);
@@ -78,11 +43,17 @@ export const routeDebugMinter: AirdropHonoRoute = async (c) => {
 	});
 };
 
-export const routeDebugBindings: AirdropHonoRoute = async (c) => {
-	if (c.env.DEBUG_KEY !== c.req.query('key')) {
-		return raise400('invalid key');
-	}
+export const routeDebugMintings: AirdropHonoRoute = async (c) => {
+	const db = c.get('db');
 
+	const airdrops = await db.query.tAirdrops.findMany({
+		where: (airdrops, { eq, and }) => and(eq(airdrops.is_minted, 0), eq(airdrops.is_claimed, 1)),
+	});
+
+	return c.json({ airdrops });
+};
+
+export const routeDebugBindings: AirdropHonoRoute = async (c) => {
 	const bindings: Record<string, any> = {};
 
 	for (const key of BINDINGS_KEYS) {

@@ -15,6 +15,7 @@ import {
 	routeAirdropList,
 	routeDebugBindings,
 	routeDebugMinter,
+	routeDebugMintings,
 	routeDebugSession,
 	routeRoot,
 } from './routes';
@@ -47,6 +48,13 @@ app.use(async (c, next) => {
 	await es.set(c.get('session') ?? {});
 });
 
+app.use('/debug/*', async (c, next) => {
+	if (c.req.query('key') !== c.env.DEBUG_KEY) {
+		return c.json({ message: 'Unauthorized' }, 400);
+	}
+	await next();
+});
+
 app.onError((e, c) => {
 	if (e instanceof HTTPException) {
 		return c.json({ message: e.message }, e.status);
@@ -64,6 +72,7 @@ app.get('/', routeRoot);
 app.get('/debug/session', routeDebugSession);
 app.get('/debug/minter', routeDebugMinter);
 app.get('/debug/bindings', routeDebugBindings);
+app.get('/debug/mintings', routeDebugMintings);
 app.get('/account/twitter', routeAccountTwitter);
 app.get('/account/twitter/authorize_url', routeAccountTwitterAuthorizeURL);
 app.post('/account/twitter/sign_out', routeAccountTwitterSignOut);
