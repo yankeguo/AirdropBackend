@@ -23,7 +23,7 @@
 		"@yankeguo/hono-cookie-session": "0.0.2",
 		"@yankeguo/ygtog": "^0.20240717205942.0",
 		"drizzle-orm": "^0.32.0",
-		"hono": "^4.5.0",
+		"hono": "^4.11.10",
 		"web3": "^4.11.0",
 		"web3-validator": "^2.0.6"
 	}
